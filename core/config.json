@@ -1,0 +1,34 @@
+{
+  "api": {
+    "tag": "api",
+    "services": ["HandlerService", "StatsService"]
+  },
+  "inbounds": [
+    {
+      "tag": "api",
+      "port": 10085,
+      "protocol": "dokodemo-door",
+      "settings": {
+        "address": "127.0.0.1"
+      }
+    },
+    {
+      "tag": "vless-inbound",
+      "port": 443,
+      "protocol": "vless",
+      "settings": {
+        "clients": [],
+        "encryption": "none"
+      }
+    }
+  ],
+  "policy": {
+    "levels": {
+      "0": {
+        "statsUserUplink": true,
+        "statsUserDownlink": true
+      }
+    }
+  },
+  "stats": {}
+}
