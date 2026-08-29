@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  panel:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: xray-panel
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - panel_data:/app
+      - /etc/xray:/etc/xray
+    environment:
+      - JWT_SECRET_KEY=change-this-secret-in-production
+
+volumes:
+  panel_data:

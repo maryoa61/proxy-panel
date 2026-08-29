@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+panel.db
+.env
+core/config.json
+.DS_Store
+dist/
+node_modules/

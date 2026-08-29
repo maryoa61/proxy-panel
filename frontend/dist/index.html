@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" class="h-full bg-gray-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پنل مدیریت Xray-core</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#eef2ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <!-- Axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Vazirmatn', sans-serif; }
+    </style>
+</head>
+<body class="h-full">
+    <div id="app" class="h-full">
+        <!-- Login Screen -->
+        <div v-if="!isAuthenticated" class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900">
+            <div class="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl">
+                <div>
+                    <h2 class="text-center text-3xl font-extrabold text-gray-900 dark:text-white">پنل مدیریت Xray-core</h2>
+                    <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">لطفاً برای ورود اطلاعات حساب ادمین را وارد کنید</p>
+                </div>
+                <form class="mt-8 space-y-6" @submit.prevent="handleLogin">
+                    <div v-if="loginError" class="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 p-3 rounded-lg text-sm text-center">
+                        {{ loginError }}
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">نام کاربری</label>
+                        <input v-model="loginForm.username" type="text" required class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">کلمه عبور</label>
+                        <input v-model="loginForm.password" type="password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div>
+                        <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500">
+                            ورود به پنل
+                        </button>
+                    </div>
+                </form>
+                <div class="text-center text-xs text-gray-400">پیش‌فرض: admin / admin123</div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Layout -->
+        <div v-else class="h-full flex">
+            <!-- Sidebar -->
+            <div class="w-64 bg-gray-900 text-white flex flex-col">
+                <div class="p-5 text-xl font-bold border-b border-gray-800 flex items-center justify-between">
+                    <span>Xray Panel</span>
+                    <span class="text-xs bg-brand-600 px-2 py-1 rounded">v1.0</span>
+                </div>
+                <nav class="flex-1 p-4 space-y-2">
+                    <a href="#" @click="currentTab = 'dashboard'" :class="{'bg-brand-600': currentTab === 'dashboard'}" class="flex items-center px-4 py-2.5 rounded-lg hover:bg-gray-800 transition">📊 داشبورد</a>
+                    <a href="#" @click="currentTab = 'inbounds'" :class="{'bg-brand-600': currentTab === 'inbounds'}" class="flex items-center px-4 py-2.5 rounded-lg hover:bg-gray-800 transition">🔌 اینباندها (Inbounds)</a>
+                    <a href="#" @click="currentTab = 'settings'" :class="{'bg-brand-600': currentTab === 'settings'}" class="flex items-center px-4 py-2.5 rounded-lg hover:bg-gray-800 transition">⚙️ تنظیمات</a>
+                </nav>
+                <div class="p-4 border-t border-gray-800">
+                    <button @click="logout" class="w-full flex items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm transition">خروج از پنل</button>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <!-- Topbar -->
+                <header class="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6">
+                    <h1 class="text-lg font-semibold text-gray-800 dark:text-white">{{ tabTitles[currentTab] }}</h1>
+                    <div class="flex items-center space-x-4 space-x-reverse">
+                        <span class="text-sm text-gray-600 dark:text-gray-300">مدیر سیستم (admin)</span>
+                    </div>
+                </header>
+
+                <!-- Content Body -->
+                <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900 p-6">
+                    <!-- Dashboard Tab -->
+                    <div v-if="currentTab === 'dashboard'" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
+                                <div class="text-sm text-gray-500">وضعیت هسته Xray</div>
+                                <div class="text-2xl font-bold text-green-600 mt-2">فعال (Online)</div>
+                            </div>
+                            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
+                                <div class="text-sm text-gray-500">تعداد اینباندها</div>
+                                <div class="text-2xl font-bold text-gray-800 dark:text-white mt-2">{{ overview.total_inbounds || 0 }}</div>
+                            </div>
+                            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
+                                <div class="text-sm text-gray-500">تعداد کل کلاینت‌ها</div>
+                                <div class="text-2xl font-bold text-gray-800 dark:text-white mt-2">{{ overview.total_clients || 0 }}</div>
+                            </div>
+                            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
+                                <div class="text-sm text-gray-500">کل ترافیک مصرفی</div>
+                                <div class="text-2xl font-bold text-brand-600 mt-2">{{ formatBytes(overview.total_traffic?.sum || 0) }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Inbounds Tab -->
+                    <div v-if="currentTab === 'inbounds'" class="space-y-6">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-xl font-bold text-gray-800 dark:text-white">مدیریت اینباندها</h2>
+                            <button @click="showAddInboundModal = true" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm shadow">➕ افزودن اینباند جدید</button>
+                        </div>
+
+                        <!-- Inbounds Table -->
+                        <div class="bg-white dark:bg-gray-800 shadow rounded-xl overflow-hidden">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead class="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">نام (Remark)</th>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">پروتکل</th>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">پورت</th>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">امنیت / انتقال</th>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">کلاینت‌ها</th>
+                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                    <tr v-for="ib in inbounds" :key="ib.id">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ ib.remark }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 uppercase">{{ ib.protocol }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ib.port }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ib.security }} / {{ ib.network }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ib.clients_count }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2 space-x-reverse">
+                                            <button @click="manageClients(ib)" class="text-brand-600 hover:text-brand-900">کلاینت‌ها</button>
+                                            <button @click="deleteInbound(ib.id)" class="text-red-600 hover:text-red-900">حذف</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Settings Tab -->
+                    <div v-if="currentTab === 'settings'" class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow space-y-4">
+                        <h2 class="text-xl font-bold text-gray-800 dark:text-white">تنظیمات سیستم</h2>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">تنظیمات کلی پنل و هسته Xray.</p>
+                    </div>
+                </main>
+            </div>
+
+            <!-- Add Inbound Modal -->
+            <div v-if="showAddInboundModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-lg w-full space-y-4">
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">افزودن اینباند جدید</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">نام (Remark)</label>
+                        <input v-model="newInbound.remark" type="text" class="mt-1 block w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">پروتکل</label>
+                        <select v-model="newInbound.protocol" class="mt-1 block w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:text-white">
+                            <option value="vless">VLESS</option>
+                            <option value="vmess">VMess</option>
+                            <option value="trojan">Trojan</option>
+                            <option value="shadowsocks">Shadowsocks</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">پورت</label>
+                        <input v-model.number="newInbound.port" type="number" class="mt-1 block w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">امنیت (Security)</label>
+                        <select v-model="newInbound.security" class="mt-1 block w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:text-white">
+                            <option value="none">none</option>
+                            <option value="tls">tls</option>
+                            <option value="reality">reality</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end space-x-2 space-x-reverse pt-4">
+                        <button @click="showAddInboundModal = false" class="px-4 py-2 border rounded-md text-gray-600">انصراف</button>
+                        <button @click="createInbound" class="px-4 py-2 bg-brand-600 text-white rounded-md">ذخیره</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, reactive, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const isAuthenticated = ref(false);
+                const currentTab = ref('dashboard');
+                const loginError = ref('');
+                const loginForm = reactive({ username: '', password: '' });
+                const overview = ref({});
+                const inbounds = ref([]);
+                const showAddInboundModal = ref(false);
+                const newInbound = reactive({ remark: '', protocol: 'vless', port: 443, security: 'reality' });
+
+                const tabTitles = {
+                    dashboard: 'داشبورد سیستم',
+                    inbounds: 'مدیریت اینباندها',
+                    settings: 'تنظیمات'
+                };
+
+                const checkAuth = () => {
+                    const token = localStorage.getItem('token');
+                    if (token) {
+                        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+                        isAuthenticated.value = true;
+                        fetchData();
+                    }
+                };
+
+                const handleLogin = async () => {
+                    try {
+                        loginError.value = '';
+                        const res = await axios.post('/api/v1/auth/login', loginForm);
+                        localStorage.setItem('token', res.data.access_token);
+                        axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.access_token}`;
+                        isAuthenticated.value = true;
+                        fetchData();
+                    } catch (err) {
+                        loginError.value = err.response?.data?.detail || 'خطا در ورود به سیستم';
+                    }
+                };
+
+                const logout = () => {
+                    localStorage.removeItem('token');
+                    isAuthenticated.value = false;
+                };
+
+                const fetchData = async () => {
+                    try {
+                        const [ovRes, ibRes] = await Promise.all([
+                            axios.get('/api/v1/dashboard/overview'),
+                            axios.get('/api/v1/inbounds')
+                        ]);
+                        overview.value = ovRes.data;
+                        inbounds.value = ibRes.data;
+                    } catch (err) {
+                        console.error(err);
+                    }
+                };
+
+                const createInbound = async () => {
+                    try {
+                        await axios.post('/api/v1/inbounds', newInbound);
+                        showAddInboundModal.value = false;
+                        fetchData();
+                    } catch (err) {
+                        alert(err.response?.data?.detail || 'خطا در ایجاد اینباند');
+                    }
+                };
+
+                const deleteInbound = async (id) => {
+                    if (confirm('آیا از حذف این اینباند اطمینان دارید؟')) {
+                        await axios.delete(`/api/v1/inbounds/${id}`);
+                        fetchData();
+                    }
+                };
+
+                const manageClients = (ib) => {
+                    alert(`مدیریت کلاینت‌های اینباند: ${ib.remark}`);
+                };
+
+                const formatBytes = (bytes) => {
+                    if (!bytes) return '0 B';
+                    const k = 1024, sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+                    const i = Math.floor(Math.log(bytes) / Math.log(k));
+                    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+                };
+
+                onMounted(() => {
+                    checkAuth();
+                });
+
+                return {
+                    isAuthenticated, currentTab, loginError, loginForm,
+                    overview, inbounds, showAddInboundModal, newInbound,
+                    tabTitles, handleLogin, logout, createInbound, deleteInbound,
+                    manageClients, formatBytes
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
