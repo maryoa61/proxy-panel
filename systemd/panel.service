@@ -1,0 +1,14 @@
+[Unit]
+Description=Xray-core Management Panel
+After=network.target xray.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/usr/local/panel
+ExecStart=/usr/local/panel/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

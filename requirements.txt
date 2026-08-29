@@ -1,0 +1,9 @@
+fastapi==0.141.1
+uvicorn==0.52.4
+sqlalchemy==2.0.52
+pydantic==2.13.5
+PyJWT==2.13.0
+bcrypt==5.0.0
+requests>=2.31.0
+grpcio>=1.59.0
+protobuf>=4.25.0
