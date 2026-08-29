@@ -1,0 +1,13 @@
+.git
+.gitignore
+.venv
+venv
+__pycache__
+*.pyc
+*.db
+core/config.json
+core/config.json.bak
+.env
+README.md
+scripts
+systemd

@@ -1,19 +1,39 @@
-version: '3.8'
-
 services:
   panel:
     build:
       context: ..
       dockerfile: docker/Dockerfile
     container_name: xray-panel
-    restart: always
+    restart: unless-stopped
     ports:
-      - "8000:8000"
-    volumes:
-      - panel_data:/app
-      - /etc/xray:/etc/xray
+      - "${PANEL_PORT:-8000}:8000"
     environment:
-      - JWT_SECRET_KEY=change-this-secret-in-production
+      # Set a long random value in .env for any public deployment.
+      JWT_SECRET_KEY: "${JWT_SECRET_KEY:-replace-this-with-a-long-random-secret}"
+      ADMIN_USERNAME: "${ADMIN_USERNAME:-admin}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:-admin123}"
+      CORS_ORIGINS: "${CORS_ORIGINS:-*}"
+      DATABASE_URL: sqlite:////data/panel.db
+      XRAY_CONFIG_PATH: /etc/xray/config.json
+      ENABLE_PUBLIC_IP_LOOKUP: ${ENABLE_PUBLIC_IP_LOOKUP:-0}
+      # Leave empty in the panel-only container. If Xray runs as a sidecar or
+      # on the host, set a command appropriate for that environment.
+      XRAY_RELOAD_COMMAND: ${XRAY_RELOAD_COMMAND:-}
+    volumes:
+      - panel_data:/data
+      - xray_config:/etc/xray
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # Xray itself is deliberately not forced into the default stack: an Xray
+  # process must have a valid Reality key/certificate and its network policy
+  # is deployment-specific. The generated file is available in the shared
+  # xray_config volume. A sample sidecar command is documented in README.md.
 
 volumes:
   panel_data:
+  xray_config:

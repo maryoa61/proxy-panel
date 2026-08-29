@@ -1,299 +1,364 @@
-<!DOCTYPE html>
-<html lang="fa" dir="rtl" class="h-full bg-gray-100">
+<!doctype html>
+<html lang="fa" dir="rtl" class="h-full">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>پنل مدیریت Xray-core</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: { 50: '#eef2ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
-                    }
-                }
-            }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#071225">
+  <title>Xray Control | پنل مدیریت</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Vazirmatn', 'ui-sans-serif', 'system-ui'] },
+          colors: {
+            ink: { 950: '#071225', 900: '#0b1930', 800: '#10213d', 700: '#173052' },
+            cyanx: { 300: '#8be9ff', 400: '#42d9f5', 500: '#10bfe1', 600: '#0796ba' },
+            violetx: { 400: '#a78bfa', 500: '#7c5cff', 600: '#6344e8' }
+          },
+          boxShadow: {
+            glow: '0 0 0 1px rgba(66,217,245,.10), 0 18px 60px rgba(4,15,37,.28)',
+            card: '0 12px 35px rgba(11,28,56,.08)'
+          }
         }
-    </script>
-    <!-- Vue 3 CDN -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-    <!-- Axios -->
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <!-- Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Vazirmatn', sans-serif; }
-    </style>
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.9/dist/axios.min.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --page: #f4f7fb;
+      --surface: rgba(255,255,255,.88);
+      --surface-solid: #fff;
+      --border: #e5ebf3;
+      --muted: #71809a;
+      --ink: #12213a;
+      --soft: #eef4fa;
+      --sidebar: #071225;
+      --sidebar-2: #0b1930;
+    }
+    html.dark {
+      color-scheme: dark;
+      --page: #071225;
+      --surface: rgba(12,29,54,.92);
+      --surface-solid: #0c1d36;
+      --border: rgba(144,178,218,.14);
+      --muted: #8fa5c1;
+      --ink: #edf6ff;
+      --soft: #122844;
+      --sidebar: #050e1d;
+      --sidebar-2: #09172a;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Vazirmatn', sans-serif; background: var(--page); color: var(--ink); }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .app-shell { min-height: 100vh; display: flex; flex-direction: row-reverse; background: var(--page); }
+    .sidebar { width: 272px; flex: 0 0 272px; min-height: 100vh; background: linear-gradient(180deg, var(--sidebar) 0%, var(--sidebar-2) 100%); color: #dbeaff; position: relative; z-index: 30; }
+    .sidebar::after { content: ''; position: absolute; inset: auto 0 0; height: 180px; background: radial-gradient(circle at 50% 100%, rgba(16,191,225,.13), transparent 66%); pointer-events: none; }
+    .main-pane { min-width: 0; flex: 1; min-height: 100vh; background: var(--page); }
+    .glass { background: var(--surface); border: 1px solid var(--border); backdrop-filter: blur(18px); }
+    .card { background: var(--surface-solid); border: 1px solid var(--border); border-radius: 18px; box-shadow: 0 10px 30px rgba(28,55,92,.045); }
+    .nav-link { color: #90a8c7; transition: all .2s ease; border: 1px solid transparent; }
+    .nav-link:hover { color: #e9f8ff; background: rgba(255,255,255,.055); }
+    .nav-link.active { color: #f6fdff; background: linear-gradient(90deg, rgba(16,191,225,.18), rgba(124,92,255,.16)); border-color: rgba(66,217,245,.18); box-shadow: inset -3px 0 0 #42d9f5; }
+    .nav-icon { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: rgba(255,255,255,.055); color: #8be9ff; }
+    .nav-link.active .nav-icon { background: rgba(66,217,245,.16); }
+    .metric-card { overflow: hidden; position: relative; }
+    .metric-card::before { content: ''; position: absolute; width: 110px; height: 110px; top: -45px; left: -35px; border-radius: 50%; background: var(--metric-glow, rgba(66,217,245,.08)); }
+    .metric-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 13px; color: var(--metric-color, #10bfe1); background: var(--metric-bg, #e8faff); }
+    .dark .metric-icon { background: color-mix(in srgb, var(--metric-color, #10bfe1) 14%, transparent); }
+    .table-row { border-top: 1px solid var(--border); transition: background .18s ease; }
+    .table-row:hover { background: color-mix(in srgb, var(--soft) 62%, transparent); }
+    .status-dot { width: 8px; height: 8px; border-radius: 999px; display: inline-block; }
+    .status-online { background: #20d49a; box-shadow: 0 0 0 4px rgba(32,212,154,.13); }
+    .status-offline { background: #f06b86; box-shadow: 0 0 0 4px rgba(240,107,134,.11); }
+    .badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 5px 10px; font-size: 11px; font-weight: 700; line-height: 1; }
+    .badge-vless { color: #0891b2; background: #e4faff; }
+    .badge-vmess { color: #6750dc; background: #eeeaff; }
+    .badge-trojan { color: #db6b25; background: #fff0e5; }
+    .badge-shadowsocks { color: #12876f; background: #e3faf1; }
+    .dark .badge-vless { color: #8be9ff; background: rgba(16,191,225,.12); }
+    .dark .badge-vmess { color: #c4b5fd; background: rgba(124,92,255,.16); }
+    .dark .badge-trojan { color: #ffc18f; background: rgba(238,132,62,.14); }
+    .dark .badge-shadowsocks { color: #7ceac5; background: rgba(32,212,154,.13); }
+    .input { width: 100%; border: 1px solid var(--border); color: var(--ink); background: var(--surface-solid); border-radius: 11px; padding: 10px 12px; outline: none; transition: border .2s, box-shadow .2s; }
+    .input:focus { border-color: rgba(16,191,225,.72); box-shadow: 0 0 0 3px rgba(16,191,225,.13); }
+    .input::placeholder { color: #94a3b8; }
+    .field-label { color: var(--muted); font-size: 12px; font-weight: 600; margin-bottom: 7px; display: block; }
+    .btn-primary { color: #03131d; background: linear-gradient(135deg, #8be9ff, #10bfe1); box-shadow: 0 8px 18px rgba(16,191,225,.2); transition: transform .2s, box-shadow .2s, filter .2s; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 11px 24px rgba(16,191,225,.28); filter: brightness(1.03); }
+    .btn-secondary { color: var(--ink); background: var(--soft); border: 1px solid var(--border); }
+    .btn-secondary:hover { border-color: rgba(16,191,225,.38); }
+    .btn-danger { color: #e45f79; background: rgba(240,107,134,.09); }
+    .btn-icon { width: 34px; height: 34px; display: grid; place-items: center; color: var(--muted); border-radius: 9px; }
+    .btn-icon:hover { color: #10bfe1; background: var(--soft); }
+    .progress { height: 7px; border-radius: 99px; background: var(--soft); overflow: hidden; }
+    .progress > span { display:block; height:100%; border-radius: inherit; background: linear-gradient(90deg, #10bfe1, #7c5cff); }
+    .chart-grid { stroke: currentColor; opacity: .09; stroke-width: 1; }
+    .chart-line-up { fill: none; stroke: #10bfe1; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .chart-line-down { fill: none; stroke: #7c5cff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .chart-area { fill: url(#areaGradient); opacity: .23; }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 80; background: rgba(3,11,25,.62); backdrop-filter: blur(5px); display: grid; place-items: center; padding: 18px; }
+    .modal { width: min(690px, 100%); max-height: min(90vh, 860px); overflow-y: auto; background: var(--surface-solid); border: 1px solid var(--border); border-radius: 22px; box-shadow: 0 25px 90px rgba(0,0,0,.28); }
+    .modal-wide { width: min(920px, 100%); }
+    .login-bg { min-height: 100vh; background: radial-gradient(circle at 20% 20%, rgba(16,191,225,.16), transparent 30%), radial-gradient(circle at 80% 80%, rgba(124,92,255,.19), transparent 35%), #071225; }
+    .login-card { background: rgba(11,25,48,.82); border: 1px solid rgba(151,201,232,.16); box-shadow: 0 28px 100px rgba(0,0,0,.3); backdrop-filter: blur(22px); }
+    .login-input { background: rgba(255,255,255,.06); border: 1px solid rgba(177,208,235,.18); color: white; }
+    .login-input:focus { border-color: #42d9f5; box-shadow: 0 0 0 3px rgba(66,217,245,.15); }
+    .toast { position: fixed; z-index: 120; left: 24px; bottom: 24px; min-width: 250px; color: white; background: #0d2341; border: 1px solid rgba(139,233,255,.24); border-radius: 13px; padding: 13px 16px; box-shadow: 0 15px 45px rgba(0,0,0,.25); }
+    .toast.error { border-color: rgba(240,107,134,.45); }
+    .skeleton { background: linear-gradient(90deg, var(--soft), color-mix(in srgb, var(--soft) 50%, transparent), var(--soft)); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+    @media (max-width: 1024px) { .sidebar { width: 240px; flex-basis: 240px; } }
+    @media (max-width: 760px) {
+      .sidebar { position: fixed; right: 0; top: 0; bottom: 0; width: 280px; transform: translateX(105%); transition: transform .25s ease; box-shadow: -20px 0 60px rgba(0,0,0,.25); }
+      .sidebar.open { transform: translateX(0); }
+      .mobile-scrim { display: block !important; }
+      .main-pane { width: 100%; }
+      .table-wrap { overflow-x: auto; }
+      .table-min { min-width: 760px; }
+    }
+  </style>
 </head>
 <body class="h-full">
-    <div id="app" class="h-full">
-        <!-- Login Screen -->
-        <div v-if="!isAuthenticated" class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900">
-            <div class="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl">
-                <div>
-                    <h2 class="text-center text-3xl font-extrabold text-gray-900 dark:text-white">پنل مدیریت Xray-core</h2>
-                    <p class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">لطفاً برای ورود اطلاعات حساب ادمین را وارد کنید</p>
-                </div>
-                <form class="mt-8 space-y-6" @submit.prevent="handleLogin">
-                    <div v-if="loginError" class="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 p-3 rounded-lg text-sm text-center">
-                        {{ loginError }}
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">نام کاربری</label>
-                        <input v-model="loginForm.username" type="text" required class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">کلمه عبور</label>
-                        <input v-model="loginForm.password" type="password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-brand-500 focus:border-brand-500 dark:bg-gray-700 dark:text-white">
-                    </div>
-                    <div>
-                        <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500">
-                            ورود به پنل
-                        </button>
-                    </div>
-                </form>
-                <div class="text-center text-xs text-gray-400">پیش‌فرض: admin / admin123</div>
-            </div>
+<div id="app">
+  <!-- Login -->
+  <section v-if="!isAuthenticated" class="login-bg flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-[430px]">
+      <div class="text-center mb-8">
+        <div class="mx-auto mb-5 w-16 h-16 rounded-2xl grid place-items-center bg-gradient-to-br from-cyanx-300 to-violetx-500 text-ink-950 text-3xl font-black shadow-glow">X</div>
+        <h1 class="text-2xl font-extrabold text-white tracking-tight">Xray Control</h1>
+        <p class="mt-2 text-sm text-slate-400">مرکز فرماندهی امن برای Xray-core</p>
+      </div>
+      <form @submit.prevent="handleLogin" class="login-card rounded-3xl p-7 sm:p-9">
+        <div class="mb-7">
+          <h2 class="text-lg font-bold text-white">خوش آمدید</h2>
+          <p class="text-xs text-slate-400 mt-1">برای ورود به داشبورد اطلاعات خود را وارد کنید.</p>
         </div>
-
-        <!-- Main Dashboard Layout -->
-        <div v-else class="h-full flex">
-            <!-- Sidebar -->
-            <div class="w-64 bg-gray-900 text-white flex flex-col">
-                <div class="p-5 text-xl font-bold border-b border-gray-800 flex items-center justify-between">
-                    <span>Xray Panel</span>
-                    <span class="text-xs bg-brand-600 px-2 py-1 rounded">v1.0</span>
-                </div>
-                <nav class="flex-1 p-4 space-y-2">
-                    <a href="#" @click="currentTab = 'dashboard'" :class="{'bg-brand-600': currentTab === 'dashboard'}" class="flex items-center px-4 py-2.5 rounded-lg hover:bg-gray-800 transition">📊 داشبورد</a>
-                    <a href="#" @click="currentTab = 'inbounds'" :class="{'bg-brand-600': currentTab === 'inbounds'}" class="flex items-center px-4 py-2.5 rounded-lg hover:bg-gray-800 transition">🔌 اینباندها (Inbounds)</a>
-                    <a href="#" @click="currentTab = 'settings'" :class="{'bg-brand-600': currentTab === 'settings'}" class="flex items-center px-4 py-2.5 rounded-lg hover:bg-gray-800 transition">⚙️ تنظیمات</a>
-                </nav>
-                <div class="p-4 border-t border-gray-800">
-                    <button @click="logout" class="w-full flex items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm transition">خروج از پنل</button>
-                </div>
-            </div>
-
-            <!-- Main Content Area -->
-            <div class="flex-1 flex flex-col overflow-hidden">
-                <!-- Topbar -->
-                <header class="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6">
-                    <h1 class="text-lg font-semibold text-gray-800 dark:text-white">{{ tabTitles[currentTab] }}</h1>
-                    <div class="flex items-center space-x-4 space-x-reverse">
-                        <span class="text-sm text-gray-600 dark:text-gray-300">مدیر سیستم (admin)</span>
-                    </div>
-                </header>
-
-                <!-- Content Body -->
-                <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900 p-6">
-                    <!-- Dashboard Tab -->
-                    <div v-if="currentTab === 'dashboard'" class="space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
-                                <div class="text-sm text-gray-500">وضعیت هسته Xray</div>
-                                <div class="text-2xl font-bold text-green-600 mt-2">فعال (Online)</div>
-                            </div>
-                            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
-                                <div class="text-sm text-gray-500">تعداد اینباندها</div>
-                                <div class="text-2xl font-bold text-gray-800 dark:text-white mt-2">{{ overview.total_inbounds || 0 }}</div>
-                            </div>
-                            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
-                                <div class="text-sm text-gray-500">تعداد کل کلاینت‌ها</div>
-                                <div class="text-2xl font-bold text-gray-800 dark:text-white mt-2">{{ overview.total_clients || 0 }}</div>
-                            </div>
-                            <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow">
-                                <div class="text-sm text-gray-500">کل ترافیک مصرفی</div>
-                                <div class="text-2xl font-bold text-brand-600 mt-2">{{ formatBytes(overview.total_traffic?.sum || 0) }}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Inbounds Tab -->
-                    <div v-if="currentTab === 'inbounds'" class="space-y-6">
-                        <div class="flex justify-between items-center">
-                            <h2 class="text-xl font-bold text-gray-800 dark:text-white">مدیریت اینباندها</h2>
-                            <button @click="showAddInboundModal = true" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm shadow">➕ افزودن اینباند جدید</button>
-                        </div>
-
-                        <!-- Inbounds Table -->
-                        <div class="bg-white dark:bg-gray-800 shadow rounded-xl overflow-hidden">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead class="bg-gray-50 dark:bg-gray-700">
-                                    <tr>
-                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">نام (Remark)</th>
-                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">پروتکل</th>
-                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">پورت</th>
-                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">امنیت / انتقال</th>
-                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">کلاینت‌ها</th>
-                                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">عملیات</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                    <tr v-for="ib in inbounds" :key="ib.id">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ ib.remark }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 uppercase">{{ ib.protocol }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ib.port }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ib.security }} / {{ ib.network }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ib.clients_count }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2 space-x-reverse">
-                                            <button @click="manageClients(ib)" class="text-brand-600 hover:text-brand-900">کلاینت‌ها</button>
-                                            <button @click="deleteInbound(ib.id)" class="text-red-600 hover:text-red-900">حذف</button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Settings Tab -->
-                    <div v-if="currentTab === 'settings'" class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow space-y-4">
-                        <h2 class="text-xl font-bold text-gray-800 dark:text-white">تنظیمات سیستم</h2>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">تنظیمات کلی پنل و هسته Xray.</p>
-                    </div>
-                </main>
-            </div>
-
-            <!-- Add Inbound Modal -->
-            <div v-if="showAddInboundModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-                <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-lg w-full space-y-4">
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">افزودن اینباند جدید</h3>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">نام (Remark)</label>
-                        <input v-model="newInbound.remark" type="text" class="mt-1 block w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:text-white">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">پروتکل</label>
-                        <select v-model="newInbound.protocol" class="mt-1 block w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:text-white">
-                            <option value="vless">VLESS</option>
-                            <option value="vmess">VMess</option>
-                            <option value="trojan">Trojan</option>
-                            <option value="shadowsocks">Shadowsocks</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">پورت</label>
-                        <input v-model.number="newInbound.port" type="number" class="mt-1 block w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:text-white">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">امنیت (Security)</label>
-                        <select v-model="newInbound.security" class="mt-1 block w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:text-white">
-                            <option value="none">none</option>
-                            <option value="tls">tls</option>
-                            <option value="reality">reality</option>
-                        </select>
-                    </div>
-                    <div class="flex justify-end space-x-2 space-x-reverse pt-4">
-                        <button @click="showAddInboundModal = false" class="px-4 py-2 border rounded-md text-gray-600">انصراف</button>
-                        <button @click="createInbound" class="px-4 py-2 bg-brand-600 text-white rounded-md">ذخیره</button>
-                    </div>
-                </div>
-            </div>
+        <div v-if="loginError" class="mb-5 rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-xs text-rose-200">{{ loginError }}</div>
+        <div class="space-y-4">
+          <div>
+            <label class="field-label text-slate-400">نام کاربری</label>
+            <div class="relative"><span class="absolute right-3 top-2.5 text-slate-500">◉</span><input v-model.trim="loginForm.username" autocomplete="username" required class="input login-input pr-10" placeholder="نام کاربری مدیر"></div>
+          </div>
+          <div>
+            <label class="field-label text-slate-400">کلمه عبور</label>
+            <div class="relative"><span class="absolute right-3 top-2.5 text-slate-500">●</span><input v-model="loginForm.password" :type="showPassword ? 'text' : 'password'" autocomplete="current-password" required class="input login-input pr-10 pl-10" placeholder="کلمه عبور"><button type="button" @click="showPassword = !showPassword" class="absolute left-3 top-2.5 text-slate-500 hover:text-cyan-300">{{ showPassword ? '◉' : '◌' }}</button></div>
+          </div>
         </div>
+        <button :disabled="busy" class="btn-primary mt-7 w-full rounded-xl py-3 text-sm font-extrabold disabled:opacity-60">{{ busy ? 'در حال بررسی…' : 'ورود به پنل' }}</button>
+        <div class="mt-6 flex items-center gap-3 text-[11px] text-slate-500"><span class="h-px bg-white/10 flex-1"></span><span>اتصال رمزنگاری‌شده با JWT</span><span class="h-px bg-white/10 flex-1"></span></div>
+      </form>
+      <p class="mt-5 text-center text-[11px] text-slate-500">نسخه ۲.۰ · دسترسی فقط برای مدیر سیستم</p>
     </div>
+  </section>
 
-    <script>
-        const { createApp, ref, reactive, onMounted } = Vue;
+  <!-- Application -->
+  <div v-else class="app-shell">
+    <div v-if="mobileMenu" @click="mobileMenu = false" class="mobile-scrim hidden fixed inset-0 z-20 bg-slate-950/60"></div>
+    <aside :class="['sidebar', {open: mobileMenu}]">
+      <div class="relative z-10 flex h-full flex-col px-4 py-5">
+        <div class="flex items-center gap-3 px-2 mb-9">
+          <div class="w-11 h-11 rounded-xl grid place-items-center bg-gradient-to-br from-cyanx-300 to-violetx-500 text-ink-950 text-xl font-black">X</div>
+          <div><div class="font-extrabold tracking-tight text-white">Xray Control</div><div class="text-[10px] text-slate-500 mt-0.5">CORE MANAGEMENT SUITE</div></div>
+          <button class="mr-auto btn-icon text-slate-500 md:hidden" @click="mobileMenu = false">×</button>
+        </div>
+        <div class="px-3 mb-3 text-[10px] tracking-widest font-bold text-slate-600">نمای کلی</div>
+        <nav class="space-y-1">
+          <a href="#" @click.prevent="go('dashboard')" :class="['nav-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm', {active: currentView === 'dashboard'}]"><span class="nav-icon">⌂</span><span>داشبورد</span><span v-if="currentView === 'dashboard'" class="mr-auto text-cyanx-300">‹</span></a>
+          <a href="#" @click.prevent="go('inbounds')" :class="['nav-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm', {active: currentView === 'inbounds' || currentView === 'clients'}]"><span class="nav-icon">◈</span><span>اینباندها</span><span class="mr-auto rounded-full bg-white/10 px-2 py-0.5 text-[10px]">{{ inbounds.length }}</span></a>
+          <a href="#" @click.prevent="go('nodes')" :class="['nav-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm', {active: currentView === 'nodes'}]"><span class="nav-icon">⌘</span><span>نودها</span></a>
+        </nav>
+        <div class="px-3 mt-8 mb-3 text-[10px] tracking-widest font-bold text-slate-600">ابزارها</div>
+        <nav class="space-y-1">
+          <a href="#" @click.prevent="go('config')" :class="['nav-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm', {active: currentView === 'config'}]"><span class="nav-icon">{ }</span><span>کانفیگ Xray</span></a>
+          <a href="#" @click.prevent="go('settings')" :class="['nav-link flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm', {active: currentView === 'settings'}]"><span class="nav-icon">⚙</span><span>تنظیمات سیستم</span></a>
+        </nav>
+        <div class="mt-auto relative z-10">
+          <div class="rounded-2xl border border-cyanx-400/15 bg-cyanx-400/5 p-3 mb-4">
+            <div class="flex items-center gap-2 text-xs text-slate-300"><span class="status-dot status-online"></span> سرویس پنل فعال است</div>
+            <div class="text-[10px] text-slate-500 mt-2 leading-5">تغییرات اینباندها پس از ذخیره، به هسته Xray اعمال می‌شود.</div>
+          </div>
+          <div class="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[.03] p-3">
+            <div class="w-9 h-9 rounded-full bg-violetx-500/20 text-violetx-400 grid place-items-center text-sm font-bold">{{ adminInitial }}</div>
+            <div class="min-w-0"><div class="text-xs text-white truncate">{{ me.username || 'مدیر سیستم' }}</div><div class="text-[10px] text-slate-500 mt-0.5">Administrator</div></div>
+            <button @click="logout" class="mr-auto btn-icon text-rose-300/70 hover:text-rose-300" title="خروج">↪</button>
+          </div>
+        </div>
+      </div>
+    </aside>
 
-        createApp({
-            setup() {
-                const isAuthenticated = ref(false);
-                const currentTab = ref('dashboard');
-                const loginError = ref('');
-                const loginForm = reactive({ username: '', password: '' });
-                const overview = ref({});
-                const inbounds = ref([]);
-                const showAddInboundModal = ref(false);
-                const newInbound = reactive({ remark: '', protocol: 'vless', port: 443, security: 'reality' });
+    <main class="main-pane">
+      <header class="h-[76px] px-4 sm:px-7 lg:px-10 flex items-center justify-between border-b" style="border-color:var(--border);background:var(--surface)">
+        <div class="flex items-center gap-3">
+          <button @click="mobileMenu = true" class="btn-icon md:hidden text-xl">☰</button>
+          <div><div class="text-[11px] font-semibold" style="color:var(--muted)">مرکز مدیریت / {{ viewTitle }}</div><h1 class="text-xl font-extrabold mt-1 tracking-tight">{{ viewTitle }}</h1></div>
+        </div>
+        <div class="flex items-center gap-2 sm:gap-4">
+          <div class="hidden lg:flex items-center gap-2 rounded-xl px-3 py-2" style="background:var(--soft);color:var(--muted)"><span>⌕</span><input v-model="globalSearch" class="bg-transparent outline-none text-xs w-36" placeholder="جست‌وجو…"></div>
+          <button @click="toggleTheme" class="btn-icon" :title="darkMode ? 'حالت روشن' : 'حالت تاریک'">{{ darkMode ? '☼' : '☾' }}</button>
+          <button @click="refreshAll" class="btn-icon" :class="{'animate-spin': refreshing}" title="به‌روزرسانی">↻</button>
+          <div class="h-7 w-px hidden sm:block" style="background:var(--border)"></div>
+          <div class="hidden sm:flex items-center gap-2 text-xs" style="color:var(--muted)"><span class="status-dot status-online"></span> آنلاین</div>
+        </div>
+      </header>
 
-                const tabTitles = {
-                    dashboard: 'داشبورد سیستم',
-                    inbounds: 'مدیریت اینباندها',
-                    settings: 'تنظیمات'
-                };
+      <div class="px-4 py-6 sm:px-7 lg:px-10 max-w-[1600px] mx-auto">
+        <!-- Dashboard -->
+        <section v-if="currentView === 'dashboard'" class="space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4"><div><p class="text-sm" style="color:var(--muted)">نمای لحظه‌ای زیرساخت شما</p><h2 class="text-2xl font-extrabold mt-1">خلاصه وضعیت سرویس</h2></div><div class="flex items-center gap-2 text-xs" style="color:var(--muted)"><span class="status-dot status-online"></span> آخرین بروزرسانی: {{ lastRefresh }}</div></div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div class="card metric-card p-5" style="--metric-color:#10bfe1;--metric-bg:#e8faff;--metric-glow:rgba(16,191,225,.11)"><div class="flex items-start justify-between"><div><div class="text-xs font-semibold" style="color:var(--muted)">وضعیت هسته Xray</div><div class="text-xl font-extrabold mt-3 flex items-center gap-2"><span :class="['status-dot', isXrayOnline ? 'status-online' : 'status-offline']"></span>{{ isXrayOnline ? 'فعال و پایدار' : 'در انتظار اتصال' }}</div></div><div class="metric-icon text-xl">⌁</div></div><div class="mt-4 text-[11px]" style="color:var(--muted)">{{ overview.xray_status?.process_online ? 'پردازش Xray شناسایی شد' : (overview.xray_status?.configured ? 'کانفیگ تولید شده؛ پردازش خارجی' : 'کانفیگ هنوز تولید نشده') }}</div></div>
+            <div class="card metric-card p-5" style="--metric-color:#7c5cff;--metric-bg:#eeeaff;--metric-glow:rgba(124,92,255,.1)"><div class="flex items-start justify-between"><div><div class="text-xs font-semibold" style="color:var(--muted)">اینباندهای فعال</div><div class="text-3xl font-extrabold mt-2">{{ overview.total_inbounds || 0 }}</div></div><div class="metric-icon text-lg">◈</div></div><div class="mt-4 text-[11px]" style="color:var(--muted)">{{ enabledInbounds }} مورد در حال سرویس‌دهی</div></div>
+            <div class="card metric-card p-5" style="--metric-color:#20d49a;--metric-bg:#e5fbf2;--metric-glow:rgba(32,212,154,.1)"><div class="flex items-start justify-between"><div><div class="text-xs font-semibold" style="color:var(--muted)">کلاینت‌های فعال</div><div class="text-3xl font-extrabold mt-2">{{ overview.active_clients || 0 }}</div></div><div class="metric-icon text-lg">♙</div></div><div class="mt-4 text-[11px]" style="color:var(--muted)">از {{ overview.total_clients || 0 }} کلاینت ثبت‌شده</div></div>
+            <div class="card metric-card p-5" style="--metric-color:#f09a52;--metric-bg:#fff1e5;--metric-glow:rgba(240,154,82,.1)"><div class="flex items-start justify-between"><div><div class="text-xs font-semibold" style="color:var(--muted)">مصرف کل ترافیک</div><div class="text-2xl font-extrabold mt-2">{{ formatBytes(overview.total_traffic?.sum || 0) }}</div></div><div class="metric-icon text-lg">⇅</div></div><div class="mt-4 flex items-center gap-3 text-[11px]" style="color:var(--muted)"><span class="text-cyanx-600 dark:text-cyanx-300">↑ {{ formatBytes(overview.total_traffic?.up || 0) }}</span><span class="text-violetx-600 dark:text-violetx-400">↓ {{ formatBytes(overview.total_traffic?.down || 0) }}</span></div></div>
+          </div>
+          <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+            <div class="card xl:col-span-2 p-5 sm:p-6"><div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6"><div><h3 class="font-bold">نمودار ترافیک</h3><p class="text-[11px] mt-1" style="color:var(--muted)">روند مصرف آپلود و دانلود در بازه انتخابی</p></div><div class="flex items-center gap-2"><button v-for="item in chartRanges" :key="item.value" @click="loadTraffic(item.value)" :class="['rounded-lg px-3 py-1.5 text-[11px] font-semibold', chartRange === item.value ? 'bg-cyanx-500 text-ink-950' : 'btn-secondary']">{{ item.label }}</button></div></div><div class="h-[235px] relative"><svg viewBox="0 0 800 245" preserveAspectRatio="none" class="w-full h-full" :class="darkMode ? 'text-slate-200' : 'text-slate-800'"><defs><linearGradient id="areaGradient" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#10bfe1"/><stop offset="1" stop-color="#10bfe1" stop-opacity="0"/></linearGradient></defs><g><line v-for="y in [35,85,135,185,235]" :key="y" x1="0" :y1="y" x2="800" :y2="y" class="chart-grid"/></g><path :d="chartArea" class="chart-area"></path><path :d="chartUpPath" class="chart-line-up"></path><path :d="chartDownPath" class="chart-line-down"></path></svg><div class="absolute bottom-0 inset-x-0 flex justify-between text-[10px] px-1" style="color:var(--muted)"><span v-for="label in chart.labels.slice(0, 7)" :key="label">{{ label }}</span></div></div><div class="flex items-center gap-5 mt-4 text-[11px]" style="color:var(--muted)"><span class="flex items-center gap-2"><i class="w-2 h-2 rounded-full bg-cyanx-500"></i>آپلود</span><span class="flex items-center gap-2"><i class="w-2 h-2 rounded-full bg-violetx-500"></i>دانلود</span></div></div>
+            <div class="card p-5 sm:p-6"><div class="flex items-center justify-between mb-6"><div><h3 class="font-bold">منابع سرور</h3><p class="text-[11px] mt-1" style="color:var(--muted)">مصرف فعلی سیستم</p></div><span class="rounded-lg px-2 py-1 text-[10px] font-bold text-cyanx-600 bg-cyanx-500/10">LIVE</span></div><div class="space-y-6"><div><div class="flex justify-between text-xs mb-2"><span style="color:var(--muted)">پردازنده</span><b>{{ overview.xray_status?.cpu || 0 }}%</b></div><div class="progress"><span :style="{width: Math.min(100, overview.xray_status?.cpu || 0) + '%'}"></span></div></div><div><div class="flex justify-between text-xs mb-2"><span style="color:var(--muted)">حافظه</span><b>{{ overview.xray_status?.memory || 0 }}%</b></div><div class="progress"><span :style="{width: Math.min(100, overview.xray_status?.memory || 0) + '%'}"></span></div></div><div><div class="flex justify-between text-xs mb-2"><span style="color:var(--muted)">فضای دیسک</span><b>{{ overview.xray_status?.disk || 0 }}%</b></div><div class="progress"><span :style="{width: Math.min(100, overview.xray_status?.disk || 0) + '%'}"></span></div></div></div><div class="mt-7 rounded-xl p-3" style="background:var(--soft)"><div class="text-[11px]" style="color:var(--muted)">هاست سرویس</div><div class="font-mono text-xs mt-1 truncate" dir="ltr">{{ overview.server_host || '127.0.0.1' }}</div></div></div>
+          </div>
+          <div class="card overflow-hidden"><div class="p-5 flex items-center justify-between"><div><h3 class="font-bold">اینباندهای اخیر</h3><p class="text-[11px] mt-1" style="color:var(--muted)">دسترسی سریع به سرویس‌ها</p></div><button @click="go('inbounds')" class="text-xs font-bold text-cyanx-600 dark:text-cyanx-300">مشاهده همه ←</button></div><div v-if="inbounds.length" class="table-wrap"><table class="w-full text-right table-min"><thead><tr class="text-[10px]" style="color:var(--muted);background:var(--soft)"><th class="px-5 py-3 font-semibold">نام سرویس</th><th class="px-5 py-3 font-semibold">پروتکل</th><th class="px-5 py-3 font-semibold">پورت</th><th class="px-5 py-3 font-semibold">کلاینت</th><th class="px-5 py-3 font-semibold">وضعیت</th><th class="px-5 py-3"></th></tr></thead><tbody><tr v-for="ib in inbounds.slice(0,5)" :key="ib.id" class="table-row text-xs"><td class="px-5 py-4 font-bold">{{ ib.remark }}</td><td class="px-5 py-4"><span :class="['badge','badge-'+ib.protocol]">{{ ib.protocol.toUpperCase() }}</span></td><td class="px-5 py-4 font-mono" dir="ltr">{{ ib.port }}</td><td class="px-5 py-4">{{ ib.clients_count }}</td><td class="px-5 py-4"><span class="flex items-center gap-2" :class="ib.enabled ? 'text-emerald-500' : 'text-slate-400'"><i :class="['status-dot', ib.enabled ? 'status-online' : 'status-offline']"></i>{{ ib.enabled ? 'فعال' : 'خاموش' }}</span></td><td class="px-5 py-4 text-left"><button @click="openClients(ib)" class="btn-secondary rounded-lg px-3 py-1.5 text-[11px]">مدیریت</button></td></tr></tbody></table></div><div v-else class="p-10 text-center text-sm" style="color:var(--muted)">هنوز اینباندی ساخته نشده است. <button @click="openInboundModal()" class="text-cyanx-600 dark:text-cyanx-300 font-bold">اولین سرویس را بسازید.</button></div></div>
+        </section>
 
-                const checkAuth = () => {
-                    const token = localStorage.getItem('token');
-                    if (token) {
-                        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-                        isAuthenticated.value = true;
-                        fetchData();
-                    }
-                };
+        <!-- Inbounds -->
+        <section v-if="currentView === 'inbounds'" class="space-y-5"><div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4"><div><p class="text-sm" style="color:var(--muted)">مدیریت نقاط ورودی و ترنسپورت‌ها</p><h2 class="text-2xl font-extrabold mt-1">اینباندها</h2></div><button @click="openInboundModal()" class="btn-primary rounded-xl px-4 py-2.5 text-xs font-extrabold">＋ افزودن اینباند</button></div><div class="card p-3 flex flex-col sm:flex-row gap-3"><div class="relative flex-1"><span class="absolute right-3 top-2.5" style="color:var(--muted)">⌕</span><input v-model="inboundSearch" class="input pr-9 text-xs" placeholder="جست‌وجوی نام، پروتکل یا پورت…"></div><div class="flex gap-2"><select v-model="protocolFilter" class="input text-xs sm:w-36"><option value="all">همه پروتکل‌ها</option><option value="vless">VLESS</option><option value="vmess">VMess</option><option value="trojan">Trojan</option><option value="shadowsocks">Shadowsocks</option></select><button @click="refreshAll" class="btn-secondary rounded-xl px-4 text-xs">↻ بروزرسانی</button></div></div><div class="card overflow-hidden"><div v-if="filteredInbounds.length" class="table-wrap"><table class="w-full text-right table-min"><thead><tr class="text-[10px]" style="color:var(--muted);background:var(--soft)"><th class="px-5 py-3 font-semibold">سرویس / شناسه</th><th class="px-5 py-3 font-semibold">پروتکل</th><th class="px-5 py-3 font-semibold">شبکه و امنیت</th><th class="px-5 py-3 font-semibold">پورت</th><th class="px-5 py-3 font-semibold">کلاینت‌ها</th><th class="px-5 py-3 font-semibold">وضعیت</th><th class="px-5 py-3 font-semibold">عملیات</th></tr></thead><tbody><tr v-for="ib in filteredInbounds" :key="ib.id" class="table-row text-xs"><td class="px-5 py-4"><div class="font-bold">{{ ib.remark }}</div><div class="font-mono text-[10px] mt-1" style="color:var(--muted)">INB-{{ String(ib.id).padStart(4,'0') }}</div></td><td class="px-5 py-4"><span :class="['badge','badge-'+ib.protocol]">{{ ib.protocol.toUpperCase() }}</span></td><td class="px-5 py-4"><div class="font-semibold">{{ networkLabel(ib.network) }}</div><div class="text-[10px] mt-1" style="color:var(--muted)">{{ ib.security === 'reality' ? 'XTLS-Reality' : ib.security.toUpperCase() }}</div></td><td class="px-5 py-4 font-mono" dir="ltr">{{ ib.port }}</td><td class="px-5 py-4"><button @click="openClients(ib)" class="text-cyanx-600 dark:text-cyanx-300 font-bold hover:underline">{{ ib.clients_count }} کلاینت</button></td><td class="px-5 py-4"><button @click="toggleInbound(ib)" :title="ib.enabled ? 'خاموش کردن' : 'فعال کردن'" class="flex items-center gap-2"><i :class="['status-dot', ib.enabled ? 'status-online' : 'status-offline']"></i><span :class="ib.enabled ? 'text-emerald-500' : 'text-slate-400'">{{ ib.enabled ? 'فعال' : 'خاموش' }}</span></button></td><td class="px-5 py-4"><div class="flex items-center gap-1"><button @click="openClients(ib)" class="btn-icon" title="کلاینت‌ها">♙</button><button @click="editInbound(ib)" class="btn-icon" title="ویرایش">✎</button><button @click="removeInbound(ib)" class="btn-icon hover:!text-rose-500" title="حذف">⌫</button></div></td></tr></tbody></table></div><div v-else class="p-14 text-center"><div class="text-3xl mb-3">◈</div><div class="font-bold">اینباندی پیدا نشد</div><div class="text-xs mt-2" style="color:var(--muted)">فیلتر را تغییر دهید یا یک اینباند جدید ایجاد کنید.</div></div></div></section>
 
-                const handleLogin = async () => {
-                    try {
-                        loginError.value = '';
-                        const res = await axios.post('/api/v1/auth/login', loginForm);
-                        localStorage.setItem('token', res.data.access_token);
-                        axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.access_token}`;
-                        isAuthenticated.value = true;
-                        fetchData();
-                    } catch (err) {
-                        loginError.value = err.response?.data?.detail || 'خطا در ورود به سیستم';
-                    }
-                };
+        <!-- Clients -->
+        <section v-if="currentView === 'clients'" class="space-y-5"><div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4"><div><button @click="go('inbounds')" class="text-xs text-cyanx-600 dark:text-cyanx-300 mb-3">→ بازگشت به اینباندها</button><h2 class="text-2xl font-extrabold">کلاینت‌ها <span v-if="selectedInbound" class="text-base font-medium" style="color:var(--muted)">/ {{ selectedInbound.remark }}</span></h2><p class="text-sm mt-1" style="color:var(--muted)">مدیریت دسترسی، سهمیه و لینک اتصال کاربران</p></div><button @click="openClientModal()" class="btn-primary rounded-xl px-4 py-2.5 text-xs font-extrabold">＋ افزودن کلاینت</button></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-4"><div class="card p-4"><div class="text-xs" style="color:var(--muted)">کل کلاینت‌ها</div><div class="text-2xl font-extrabold mt-2">{{ clients.length }}</div></div><div class="card p-4"><div class="text-xs" style="color:var(--muted)">فعال</div><div class="text-2xl font-extrabold mt-2 text-emerald-500">{{ clients.filter(c=>c.enable).length }}</div></div><div class="card p-4"><div class="text-xs" style="color:var(--muted)">مصرف اینباند</div><div class="text-2xl font-extrabold mt-2">{{ formatBytes(clients.reduce((sum,c)=>sum+(c.traffic_total||0),0)) }}</div></div></div><div class="card overflow-hidden"><div v-if="clients.length" class="table-wrap"><table class="w-full text-right table-min"><thead><tr class="text-[10px]" style="color:var(--muted);background:var(--soft)"><th class="px-5 py-3">کلاینت</th><th class="px-5 py-3">وضعیت</th><th class="px-5 py-3">مصرف / سهمیه</th><th class="px-5 py-3">انقضا</th><th class="px-5 py-3">لینک‌ها</th><th class="px-5 py-3">عملیات</th></tr></thead><tbody><tr v-for="client in clients" :key="client.id" class="table-row text-xs"><td class="px-5 py-4"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-xl bg-violetx-500/10 text-violetx-600 dark:text-violetx-400 grid place-items-center font-bold">{{ client.email.slice(0,1).toUpperCase() }}</div><div><div class="font-bold">{{ client.email }}</div><div class="font-mono text-[10px] mt-1 max-w-[210px] truncate" dir="ltr" style="color:var(--muted)">{{ client.uuid_or_password }}</div></div></div></td><td class="px-5 py-4"><button @click="toggleClient(client)" :class="client.enable ? 'text-emerald-500' : 'text-slate-400'" class="flex items-center gap-2"><i :class="['status-dot', client.enable ? 'status-online' : 'status-offline']"></i>{{ client.enable ? 'فعال' : 'خاموش' }}</button></td><td class="px-5 py-4"><div class="font-semibold">{{ formatBytes(client.traffic_total || 0) }}</div><div class="text-[10px] mt-1" style="color:var(--muted)">{{ client.total_gb ? client.total_gb + ' GB سهمیه' : 'بدون محدودیت' }}</div></td><td class="px-5 py-4" :class="isExpired(client) ? 'text-rose-500' : ''">{{ client.expiry_time ? formatDate(client.expiry_time) : 'بدون انقضا' }}</td><td class="px-5 py-4"><div class="flex gap-1"><button @click="copyClientLink(client)" class="btn-secondary rounded-lg px-2.5 py-1.5 text-[10px]">کپی لینک</button><button @click="copySubscription(client)" class="btn-secondary rounded-lg px-2.5 py-1.5 text-[10px]">اشتراک</button></div></td><td class="px-5 py-4"><div class="flex gap-1"><button @click="editClient(client)" class="btn-icon">✎</button><button @click="resetTraffic(client)" class="btn-icon" title="ریست ترافیک">↺</button><button @click="removeClient(client)" class="btn-icon hover:!text-rose-500">⌫</button></div></td></tr></tbody></table></div><div v-else class="p-14 text-center"><div class="text-3xl mb-3">♙</div><div class="font-bold">کلاینتی ثبت نشده است</div><div class="text-xs mt-2" style="color:var(--muted)">اولین دسترسی را برای این سرویس بسازید.</div></div></div></section>
 
-                const logout = () => {
-                    localStorage.removeItem('token');
-                    isAuthenticated.value = false;
-                };
+        <!-- Settings -->
+        <section v-if="currentView === 'settings'" class="space-y-5"><div><p class="text-sm" style="color:var(--muted)">پیکربندی عمومی پنل و لینک‌های اشتراک</p><h2 class="text-2xl font-extrabold mt-1">تنظیمات سیستم</h2></div><div class="grid grid-cols-1 xl:grid-cols-3 gap-5"><div class="card xl:col-span-2 p-5 sm:p-7"><div class="flex items-center gap-3 mb-7"><div class="metric-icon text-lg" style="--metric-color:#10bfe1;--metric-bg:#e8faff">⌁</div><div><h3 class="font-bold">هویت شبکه</h3><p class="text-[11px] mt-1" style="color:var(--muted)">این مقادیر در لینک کلاینت‌ها به‌صورت زنده استفاده می‌شوند.</p></div></div><div class="grid grid-cols-1 md:grid-cols-2 gap-5"><div><label class="field-label">دامنه اصلی سرور</label><input v-model="settingsForm.server_domain" class="input font-mono text-sm" dir="ltr" placeholder="node.example.com"><p class="text-[10px] mt-2" style="color:var(--muted)">اولویت اول لینک‌ها؛ خالی بگذارید تا از IP استفاده شود.</p></div><div><label class="field-label">IP پشتیبان</label><input v-model="settingsForm.server_ip" class="input font-mono text-sm" dir="ltr" placeholder="203.0.113.10"><p class="text-[10px] mt-2" style="color:var(--muted)">در صورت خالی بودن دامنه، این مقدار استفاده می‌شود.</p></div><div><label class="field-label">نام نمایشی پنل</label><input v-model="settingsForm.panel_name" class="input" placeholder="Xray Control"></div><div><label class="field-label">سطح لاگ Xray</label><select v-model="settingsForm.xray_log_level" class="input"><option>warning</option><option>info</option><option>debug</option><option>error</option></select></div></div><div class="mt-7 flex justify-end"><button @click="saveSettings" :disabled="savingSettings" class="btn-primary rounded-xl px-5 py-2.5 text-xs font-bold">{{ savingSettings ? 'در حال ذخیره…' : 'ذخیره تنظیمات' }}</button></div></div><div class="card p-5 sm:p-7"><h3 class="font-bold">هاست نهایی لینک‌ها</h3><p class="text-[11px] mt-1 leading-5" style="color:var(--muted)">مقداری که در حال حاضر API برای تولید لینک انتخاب کرده است.</p><div class="mt-6 rounded-2xl p-4 border border-cyanx-500/20 bg-cyanx-500/5"><div class="text-[10px] text-cyanx-600 dark:text-cyanx-300 font-bold">RESOLVED SERVER HOST</div><div class="font-mono text-sm mt-2 break-all" dir="ltr">{{ resolvedHost || 'در حال بررسی…' }}</div></div><div class="mt-6 space-y-3 text-xs" style="color:var(--muted)"><div class="flex gap-2"><span class="text-emerald-500">✓</span><span>خواندن پویا از جدول Settings</span></div><div class="flex gap-2"><span class="text-emerald-500">✓</span><span>فال‌بک خودکار به IP و hostname</span></div><div class="flex gap-2"><span class="text-emerald-500">✓</span><span>بدون نیاز به ری‌استارت پنل</span></div></div></div></div></section>
 
-                const fetchData = async () => {
-                    try {
-                        const [ovRes, ibRes] = await Promise.all([
-                            axios.get('/api/v1/dashboard/overview'),
-                            axios.get('/api/v1/inbounds')
-                        ]);
-                        overview.value = ovRes.data;
-                        inbounds.value = ibRes.data;
-                    } catch (err) {
-                        console.error(err);
-                    }
-                };
+        <!-- Config -->
+        <section v-if="currentView === 'config'" class="space-y-5"><div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4"><div><p class="text-sm" style="color:var(--muted)">خروجی زنده از رکوردهای دیتابیس</p><h2 class="text-2xl font-extrabold mt-1">کانفیگ Xray-core</h2></div><div class="flex gap-2"><button @click="loadConfig" class="btn-secondary rounded-xl px-4 py-2.5 text-xs">↻ تولید مجدد</button><button @click="downloadConfig" class="btn-primary rounded-xl px-4 py-2.5 text-xs font-bold">↓ دانلود config.json</button></div></div><div class="card overflow-hidden"><div class="flex items-center justify-between px-5 py-3 border-b" style="border-color:var(--border);background:var(--soft)"><div class="flex gap-2 items-center text-xs"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> خروجی معتبر JSON</div><span class="text-[10px] font-mono" style="color:var(--muted)">{{ configInbounds }} inbounds</span></div><pre class="p-5 sm:p-7 overflow-auto max-h-[650px] text-[11px] sm:text-xs leading-6 text-cyanx-700 dark:text-cyanx-300" dir="ltr">{{ configText }}</pre></div></section>
 
-                const createInbound = async () => {
-                    try {
-                        await axios.post('/api/v1/inbounds', newInbound);
-                        showAddInboundModal.value = false;
-                        fetchData();
-                    } catch (err) {
-                        alert(err.response?.data?.detail || 'خطا در ایجاد اینباند');
-                    }
-                };
+        <!-- Nodes -->
+        <section v-if="currentView === 'nodes'" class="space-y-5"><div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4"><div><p class="text-sm" style="color:var(--muted)">مدیریت سرورهای متصل</p><h2 class="text-2xl font-extrabold mt-1">نودها</h2></div><button @click="openNodeModal()" class="btn-primary rounded-xl px-4 py-2.5 text-xs font-extrabold">＋ افزودن نود</button></div><div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"><div v-for="node in nodes" :key="node.id" class="card p-5"><div class="flex items-start justify-between"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-violetx-500/10 text-violetx-600 dark:text-violetx-300 grid place-items-center">⌘</div><div><div class="font-bold text-sm">{{ node.name }}</div><div class="font-mono text-[10px] mt-1" dir="ltr" style="color:var(--muted)">{{ node.api_address }}</div></div></div><span :class="node.status === 'online' ? 'text-emerald-500' : 'text-slate-400'" class="text-[10px]">● {{ node.status === 'online' ? 'آنلاین' : 'آفلاین' }}</span></div><div class="mt-5 pt-4 border-t flex items-center justify-between text-xs" style="border-color:var(--border);color:var(--muted)"><span>{{ node.inbounds_count }} اینباند متصل</span><span class="font-mono">{{ node.api_token_masked || 'بدون توکن' }}</span></div></div><div v-if="!nodes.length" class="card md:col-span-2 xl:col-span-3 p-14 text-center text-sm" style="color:var(--muted)">نودی ثبت نشده است؛ این بخش برای معماری چندسروره آماده است.</div></div></section>
+      </div>
+    </main>
+  </div>
 
-                const deleteInbound = async (id) => {
-                    if (confirm('آیا از حذف این اینباند اطمینان دارید؟')) {
-                        await axios.delete(`/api/v1/inbounds/${id}`);
-                        fetchData();
-                    }
-                };
+  <!-- Inbound modal -->
+  <div v-if="showInboundModal" class="modal-backdrop" @click.self="showInboundModal = false"><div class="modal p-5 sm:p-7"><div class="flex items-start justify-between mb-6"><div><h3 class="text-lg font-extrabold">{{ editingInbound ? 'ویرایش اینباند' : 'ساخت اینباند جدید' }}</h3><p class="text-[11px] mt-1" style="color:var(--muted)">پروتکل و مسیر انتقال را با نیاز سرور هماهنگ کنید.</p></div><button @click="showInboundModal=false" class="btn-icon text-xl">×</button></div><form @submit.prevent="saveInbound" class="space-y-5"><div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label class="field-label">نام سرویس</label><input v-model.trim="inboundForm.remark" required class="input" placeholder="VLESS Reality اصلی"></div><div><label class="field-label">پروتکل</label><select v-model="inboundForm.protocol" class="input"><option value="vless">VLESS</option><option value="vmess">VMess</option><option value="trojan">Trojan</option><option value="shadowsocks">Shadowsocks</option></select></div><div><label class="field-label">پورت</label><input v-model.number="inboundForm.port" required min="1" max="65535" type="number" class="input font-mono" dir="ltr"></div><div><label class="field-label">شبکه / ترنسپورت</label><select v-model="inboundForm.network" class="input"><option value="tcp">TCP / Raw</option><option value="ws">WebSocket</option><option value="grpc">gRPC</option><option value="http2">HTTP/2</option><option value="kcp">mKCP</option><option value="quic">QUIC</option><option value="httpupgrade">HTTP Upgrade</option><option value="xhttp">XHTTP</option></select></div><div><label class="field-label">امنیت</label><select v-model="inboundForm.security" class="input"><option value="none">بدون TLS</option><option value="tls">TLS</option><option value="reality" :disabled="inboundForm.protocol !== 'vless'">XTLS-Reality</option></select></div><div><label class="field-label">آدرس Listen</label><input v-model="inboundForm.listen" class="input font-mono" dir="ltr"></div></div><div class="rounded-2xl p-4" style="background:var(--soft)"><div class="flex items-center justify-between mb-4"><div><div class="text-sm font-bold">تنظیمات انتقال</div><div class="text-[10px] mt-1" style="color:var(--muted)">گزینه‌های مناسب برای پروتکل انتخاب‌شده</div></div><span class="badge badge-vless">{{ inboundForm.network }}</span></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><div v-if="['ws','http2','httpupgrade','xhttp'].includes(inboundForm.network)"><label class="field-label">Path</label><input v-model="inboundForm.stream.path" class="input font-mono" dir="ltr" placeholder="/ray"></div><div v-if="inboundForm.network === 'grpc'"><label class="field-label">Service Name</label><input v-model="inboundForm.stream.serviceName" class="input font-mono" dir="ltr" placeholder="grpc"></div><div v-if="['ws','http2'].includes(inboundForm.network)"><label class="field-label">Host</label><input v-model="inboundForm.stream.host" class="input font-mono" dir="ltr" placeholder="cdn.example.com"></div><div v-if="inboundForm.protocol === 'shadowsocks'"><label class="field-label">Encryption method</label><select v-model="inboundForm.stream.method" class="input font-mono" dir="ltr"><option value="aes-128-gcm">aes-128-gcm</option><option value="aes-256-gcm">aes-256-gcm</option><option value="chacha20-poly1305">chacha20-poly1305</option></select></div><template v-if="inboundForm.security === 'reality'"><div><label class="field-label">Dest</label><input v-model="inboundForm.stream.dest" class="input font-mono" dir="ltr" placeholder="www.cloudflare.com:443"></div><div><label class="field-label">Server Names</label><input v-model="inboundForm.stream.serverNames" class="input font-mono" dir="ltr" placeholder="www.cloudflare.com"></div><div><label class="field-label">Private Key</label><input v-model="inboundForm.stream.privateKey" class="input font-mono" dir="ltr" placeholder="کلید خصوصی Reality"></div><div><label class="field-label">Short IDs</label><input v-model="inboundForm.stream.shortIds" class="input font-mono" dir="ltr" placeholder="1234abcd"></div><div><label class="field-label">Public Key برای لینک</label><input v-model="inboundForm.stream.publicKey" class="input font-mono" dir="ltr" placeholder="اختیاری"></div></template><template v-if="inboundForm.security === 'tls'"><div><label class="field-label">Server Name / SNI</label><input v-model="inboundForm.stream.serverName" class="input font-mono" dir="ltr" placeholder="node.example.com"></div><div><label class="field-label">Certificate File</label><input v-model="inboundForm.stream.certificateFile" class="input font-mono" dir="ltr" placeholder="/etc/ssl/fullchain.pem"></div><div><label class="field-label">Key File</label><input v-model="inboundForm.stream.keyFile" class="input font-mono" dir="ltr" placeholder="/etc/ssl/privkey.pem"></div></template></div></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label class="field-label">سقف ترافیک اینباند (بایت، اختیاری)</label><input v-model.number="inboundForm.total_traffic_limit" type="number" min="0" class="input font-mono" dir="ltr" placeholder="0"></div><div><label class="field-label">انقضا (اختیاری)</label><input v-model="inboundForm.expire_at" type="datetime-local" class="input font-mono" dir="ltr"></div></div><div class="flex items-center justify-between pt-2"><label class="flex items-center gap-2 text-xs" style="color:var(--muted)"><input v-model="inboundForm.enabled" type="checkbox" class="accent-cyan-500"> اینباند فعال باشد</label><div class="flex gap-2"><button type="button" @click="showInboundModal=false" class="btn-secondary rounded-xl px-4 py-2.5 text-xs">انصراف</button><button type="submit" :disabled="savingInbound" class="btn-primary rounded-xl px-5 py-2.5 text-xs font-bold">{{ savingInbound ? 'در حال ذخیره…' : 'ذخیره اینباند' }}</button></div></div></form></div></div>
 
-                const manageClients = (ib) => {
-                    alert(`مدیریت کلاینت‌های اینباند: ${ib.remark}`);
-                };
+  <!-- Client modal -->
+  <div v-if="showClientModal" class="modal-backdrop" @click.self="showClientModal = false"><div class="modal p-5 sm:p-7"><div class="flex items-start justify-between mb-6"><div><h3 class="text-lg font-extrabold">{{ editingClient ? 'ویرایش کلاینت' : 'افزودن کلاینت' }}</h3><p class="text-[11px] mt-1" style="color:var(--muted)">{{ selectedInbound?.remark || '' }}</p></div><button @click="showClientModal=false" class="btn-icon text-xl">×</button></div><form @submit.prevent="saveClient" class="space-y-5"><div class="grid grid-cols-1 sm:grid-cols-2 gap-4"><div class="sm:col-span-2"><label class="field-label">ایمیل / شناسه کاربر</label><input v-model.trim="clientForm.email" required class="input font-mono" dir="ltr" placeholder="user@example.com"></div><div><label class="field-label">UUID یا Password <span class="font-normal">(خالی = تولید خودکار)</span></label><input v-model.trim="clientForm.uuid_or_password" class="input font-mono" dir="ltr" placeholder="auto-generated"></div><div v-if="selectedInbound?.protocol === 'vless'"><label class="field-label">Flow</label><select v-model="clientForm.flow" class="input font-mono" dir="ltr"><option value="">بدون Flow</option><option value="xtls-rprx-vision">xtls-rprx-vision</option></select></div><div><label class="field-label">سقف ترافیک (GB، صفر = نامحدود)</label><input v-model.number="clientForm.total_gb" type="number" min="0" class="input font-mono" dir="ltr"></div><div><label class="field-label">محدودیت IP همزمان</label><input v-model.number="clientForm.limit_ip" type="number" min="0" class="input font-mono" dir="ltr" placeholder="0"></div><div><label class="field-label">تاریخ انقضا</label><input v-model="clientForm.expiry_time" type="datetime-local" class="input font-mono" dir="ltr"></div></div><label class="flex items-center gap-2 text-xs" style="color:var(--muted)"><input v-model="clientForm.enable" type="checkbox" class="accent-cyan-500"> کلاینت فعال باشد</label><div class="flex justify-end gap-2 pt-2"><button type="button" @click="showClientModal=false" class="btn-secondary rounded-xl px-4 py-2.5 text-xs">انصراف</button><button type="submit" :disabled="savingClient" class="btn-primary rounded-xl px-5 py-2.5 text-xs font-bold">{{ savingClient ? 'در حال ذخیره…' : 'ذخیره کلاینت' }}</button></div></form></div></div>
 
-                const formatBytes = (bytes) => {
-                    if (!bytes) return '0 B';
-                    const k = 1024, sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-                    const i = Math.floor(Math.log(bytes) / Math.log(k));
-                    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-                };
+  <!-- Node modal -->
+  <div v-if="showNodeModal" class="modal-backdrop" @click.self="showNodeModal=false"><div class="modal p-5 sm:p-7"><div class="flex items-start justify-between mb-6"><h3 class="text-lg font-extrabold">افزودن نود</h3><button @click="showNodeModal=false" class="btn-icon text-xl">×</button></div><form @submit.prevent="saveNode" class="space-y-4"><div><label class="field-label">نام نود</label><input v-model.trim="nodeForm.name" required class="input" placeholder="Frankfurt 01"></div><div><label class="field-label">آدرس API</label><input v-model.trim="nodeForm.api_address" required class="input font-mono" dir="ltr" placeholder="https://node.example.com:8080"></div><div><label class="field-label">توکن API</label><input v-model="nodeForm.api_token" class="input font-mono" dir="ltr" type="password"></div><div class="flex justify-end gap-2 pt-3"><button type="button" @click="showNodeModal=false" class="btn-secondary rounded-xl px-4 py-2.5 text-xs">انصراف</button><button class="btn-primary rounded-xl px-5 py-2.5 text-xs font-bold">ثبت نود</button></div></form></div></div>
 
-                onMounted(() => {
-                    checkAuth();
-                });
+  <div v-if="toast.message" :class="['toast', {error: toast.type === 'error'}]"><div class="flex items-center gap-3"><span class="text-lg">{{ toast.type === 'error' ? '!' : '✓' }}</span><span class="text-xs leading-5">{{ toast.message }}</span></div></div>
+</div>
 
-                return {
-                    isAuthenticated, currentTab, loginError, loginForm,
-                    overview, inbounds, showAddInboundModal, newInbound,
-                    tabTitles, handleLogin, logout, createInbound, deleteInbound,
-                    manageClients, formatBytes
-                };
-            }
-        }).mount('#app');
-    </script>
+<script>
+const { createApp, ref, reactive, computed, onMounted, watch } = Vue;
+
+createApp({
+  setup() {
+    const isAuthenticated = ref(Boolean(localStorage.getItem('xray_panel_token')));
+    const token = ref(localStorage.getItem('xray_panel_token') || '');
+    const busy = ref(false), refreshing = ref(false), mobileMenu = ref(false), darkMode = ref(localStorage.getItem('xray_theme') === 'dark');
+    const showPassword = ref(false), loginError = ref(''), currentView = ref('dashboard'), globalSearch = ref('');
+    const loginForm = reactive({ username: '', password: '' });
+    const me = ref({ username: '' }), overview = ref({}), inbounds = ref([]), clients = ref([]), nodes = ref([]);
+    const settings = ref({}); const resolvedHost = ref('');
+    const chart = ref({ labels: [], up: [], down: [] }), chartRange = ref('day');
+    const selectedInbound = ref(null), selectedClient = ref(null), config = ref({});
+    const inboundSearch = ref(''), protocolFilter = ref('all');
+    const showInboundModal = ref(false), editingInbound = ref(null), savingInbound = ref(false);
+    const showClientModal = ref(false), editingClient = ref(null), savingClient = ref(false);
+    const showNodeModal = ref(false), savingSettings = ref(false);
+    const lastRefresh = ref('همین حالا'); const toast = reactive({ message: '', type: 'success' }); let toastTimer;
+
+    const blankInbound = () => ({ remark: '', protocol: 'vless', port: 443, listen: '0.0.0.0', network: 'tcp', security: 'reality', total_traffic_limit: null, expire_at: '', enabled: true, stream: { path: '/ray', serviceName: 'grpc', host: '', method: 'aes-128-gcm', dest: 'www.cloudflare.com:443', serverNames: 'www.cloudflare.com', privateKey: '', shortIds: '', publicKey: '', serverName: '', certificateFile: '', keyFile: '' } });
+    const inboundForm = reactive(blankInbound());
+    const clientForm = reactive({ email: '', uuid_or_password: '', flow: 'xtls-rprx-vision', limit_ip: 0, total_gb: 0, expiry_time: '', enable: true });
+    const settingsForm = reactive({ server_domain: '', server_ip: '', panel_name: 'Xray Control', xray_log_level: 'warning' });
+    const nodeForm = reactive({ name: '', api_address: '', api_token: '' });
+    const chartRanges = [{value:'day',label:'امروز'},{value:'week',label:'هفته'},{value:'month',label:'ماه'}];
+
+    const api = axios.create({ baseURL: '/api/v1', headers: { 'Content-Type': 'application/json' } });
+    api.interceptors.request.use(request => { if (token.value) request.headers.Authorization = `Bearer ${token.value}`; return request; });
+    api.interceptors.response.use(response => response, error => { if (error.response?.status === 401) logout(); return Promise.reject(error); });
+
+    const viewTitle = computed(() => ({ dashboard: 'داشبورد', inbounds: 'اینباندها', clients: 'مدیریت کلاینت‌ها', settings: 'تنظیمات سیستم', config: 'کانفیگ Xray', nodes: 'نودها' }[currentView.value] || 'داشبورد'));
+    const adminInitial = computed(() => (me.value.username || loginForm.username || 'A').slice(0,1).toUpperCase());
+    const isXrayOnline = computed(() => ['online','configured'].includes(overview.value.xray_status?.status));
+    const enabledInbounds = computed(() => inbounds.value.filter(x => x.enabled).length);
+    const filteredInbounds = computed(() => inbounds.value.filter(ib => { const q = inboundSearch.value.trim().toLowerCase(); return (!q || `${ib.remark} ${ib.protocol} ${ib.port}`.toLowerCase().includes(q)) && (protocolFilter.value === 'all' || ib.protocol === protocolFilter.value); }));
+    const configText = computed(() => JSON.stringify(config.value || {}, null, 2));
+    const configInbounds = computed(() => Array.isArray(config.value?.inbounds) ? config.value.inbounds.filter(x => x.tag !== 'api').length : 0);
+
+    function setTheme() { document.documentElement.classList.toggle('dark', darkMode.value); }
+    function toggleTheme() { darkMode.value = !darkMode.value; localStorage.setItem('xray_theme', darkMode.value ? 'dark' : 'light'); setTheme(); }
+    function showToast(message, type='success') { toast.message = message; toast.type = type; clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.message = '', 3600); }
+    function friendlyError(error, fallback='عملیات انجام نشد') { return error.response?.data?.detail || fallback; }
+    function logout() { localStorage.removeItem('xray_panel_token'); token.value = ''; isAuthenticated.value = false; me.value = {}; currentView.value = 'dashboard'; }
+    function go(view) { currentView.value = view; mobileMenu.value = false; if (view === 'settings') loadSettings(); if (view === 'config') loadConfig(); if (view === 'nodes') loadNodes(); }
+    function formatBytes(value) { const bytes = Number(value || 0); if (!bytes) return '۰ B'; const units = ['B','KB','MB','GB','TB']; const i = Math.min(Math.floor(Math.log(bytes)/Math.log(1024)), units.length-1); return `${(bytes/Math.pow(1024,i)).toFixed(i ? 1 : 0)} ${units[i]}`; }
+    function formatDate(value) { if (!value) return '—'; try { return new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)); } catch { return value; } }
+    function isExpired(client) { return client.expiry_time && new Date(client.expiry_time) < new Date(); }
+    function networkLabel(value) { return ({tcp:'TCP',raw:'TCP',ws:'WebSocket',grpc:'gRPC',gRPC:'gRPC',http2:'HTTP/2',http:'HTTP/2',kcp:'mKCP',quic:'QUIC',httpupgrade:'HTTP Upgrade',xhttp:'XHTTP'}[value] || value); }
+    function localDateTime(value) { return value ? new Date(value).toISOString().slice(0,16) : ''; }
+    function apiDate(value) { return value ? (value.length === 16 ? `${value}:00` : value) : null; }
+
+    async function handleLogin() {
+      busy.value = true; loginError.value = '';
+      try { const response = await api.post('/auth/login', loginForm); localStorage.setItem('xray_panel_token', response.data.access_token); token.value = response.data.access_token; isAuthenticated.value = true; await loadAll(); showToast('با موفقیت وارد شدید'); }
+      catch (error) { loginError.value = friendlyError(error, 'اطلاعات ورود صحیح نیست'); }
+      finally { busy.value = false; }
+    }
+    async function loadAll() { await Promise.allSettled([loadMe(), loadOverview(), loadInbounds(), loadTraffic('day'), loadSettings()]); lastRefresh.value = new Intl.DateTimeFormat('fa-IR', {hour:'2-digit',minute:'2-digit'}).format(new Date()); }
+    async function refreshAll() { refreshing.value = true; try { await loadAll(); showToast('داده‌ها بروزرسانی شد'); } finally { refreshing.value = false; } }
+    async function loadMe() { try { me.value = await api.get('/auth/me').then(r=>r.data); } catch {} }
+    async function loadOverview() { try { overview.value = await api.get('/dashboard/overview').then(r=>r.data); } catch (error) { if (isAuthenticated.value) showToast(friendlyError(error, 'دریافت وضعیت سرور ناموفق بود'), 'error'); } }
+    async function loadInbounds() { try { inbounds.value = await api.get('/inbounds').then(r=>r.data); } catch (error) { showToast(friendlyError(error, 'دریافت اینباندها ناموفق بود'), 'error'); } }
+    async function loadTraffic(range) { chartRange.value = range; try { chart.value = await api.get('/dashboard/traffic-chart', {params:{range}}).then(r=>r.data); } catch {} }
+    async function loadSettings() { try { const data = await api.get('/settings').then(r=>r.data); settings.value = data; Object.keys(settingsForm).forEach(k => { if (data[k] !== undefined) settingsForm[k] = data[k]; }); resolvedHost.value = data._resolved_host || ''; } catch {} }
+    async function loadNodes() { try { nodes.value = await api.get('/nodes').then(r=>r.data); } catch (error) { showToast(friendlyError(error, 'دریافت نودها ناموفق بود'), 'error'); } }
+    async function loadConfig() { try { config.value = await api.get('/xray/config').then(r=>r.data); } catch (error) { showToast(friendlyError(error, 'تولید کانفیگ ناموفق بود'), 'error'); } }
+    async function downloadConfig() { try { const response = await api.get('/xray/config/download', {responseType:'blob'}); const url = URL.createObjectURL(response.data); const a = document.createElement('a'); a.href=url; a.download='config.json'; a.click(); URL.revokeObjectURL(url); showToast('فایل config.json آماده شد'); } catch (error) { showToast(friendlyError(error, 'دانلود کانفیگ ناموفق بود'), 'error'); } }
+
+    function openInboundModal() { editingInbound.value = null; Object.assign(inboundForm, blankInbound()); showInboundModal.value = true; }
+    function editInbound(ib) { editingInbound.value = ib; const stream = ib.stream_settings_object || {}; Object.assign(inboundForm, {remark:ib.remark,protocol:ib.protocol,port:ib.port,listen:ib.listen,network:ib.network,security:ib.security,total_traffic_limit:ib.total_traffic_limit,expire_at:localDateTime(ib.expire_at),enabled:ib.enabled,stream:{...blankInbound().stream,...stream}}); if (Array.isArray(inboundForm.stream.serverNames)) inboundForm.stream.serverNames = inboundForm.stream.serverNames.join(','); if (Array.isArray(inboundForm.stream.shortIds)) inboundForm.stream.shortIds = inboundForm.stream.shortIds.join(','); showInboundModal.value = true; }
+    function buildStream() { const s = {...inboundForm.stream}; if (typeof s.serverNames === 'string') s.serverNames = s.serverNames.split(',').map(x=>x.trim()).filter(Boolean); else if (!s.serverNames) s.serverNames = ['www.cloudflare.com']; if (typeof s.shortIds === 'string') s.shortIds = s.shortIds.split(',').map(x=>x.trim()).filter(Boolean); return s; }
+    async function saveInbound() { savingInbound.value = true; const payload = {remark:inboundForm.remark,protocol:inboundForm.protocol,port:inboundForm.port,listen:inboundForm.listen,network:inboundForm.network,security:inboundForm.security,stream_settings:buildStream(),sniffing:{enabled:true,destOverride:['http','tls','quic']},total_traffic_limit:inboundForm.total_traffic_limit || null,expire_at:apiDate(inboundForm.expire_at),enabled:inboundForm.enabled}; try { if (editingInbound.value) await api.put(`/inbounds/${editingInbound.value.id}`, payload); else await api.post('/inbounds', payload); showInboundModal.value=false; await Promise.all([loadInbounds(),loadOverview()]); showToast('اینباند با موفقیت ذخیره شد'); } catch(error) { showToast(friendlyError(error,'ذخیره اینباند ناموفق بود'),'error'); } finally { savingInbound.value=false; } }
+    async function toggleInbound(ib) { try { const result=await api.post(`/inbounds/${ib.id}/toggle`); ib.enabled=result.data.enabled; await loadOverview(); showToast(ib.enabled ? 'اینباند فعال شد' : 'اینباند خاموش شد'); } catch(error) { showToast(friendlyError(error),'error'); } }
+    async function removeInbound(ib) { if (!confirm(`اینباند «${ib.remark}» و کلاینت‌های آن حذف شود؟`)) return; try { await api.delete(`/inbounds/${ib.id}`); await Promise.all([loadInbounds(),loadOverview()]); showToast('اینباند حذف شد'); } catch(error) { showToast(friendlyError(error),'error'); } }
+
+    async function openClients(ib) { selectedInbound.value = ib; currentView.value = 'clients'; mobileMenu.value=false; try { clients.value = await api.get(`/inbounds/${ib.id}/clients`).then(r=>r.data); } catch(error) { showToast(friendlyError(error,'دریافت کلاینت‌ها ناموفق بود'),'error'); } }
+    function openClientModal() { if (!selectedInbound.value) return; editingClient.value=null; Object.assign(clientForm,{email:'',uuid_or_password:'',flow:selectedInbound.value.protocol === 'vless' ? 'xtls-rprx-vision' : '',limit_ip:0,total_gb:0,expiry_time:'',enable:true}); showClientModal.value=true; }
+    function editClient(client) { editingClient.value=client; Object.assign(clientForm,{email:client.email,uuid_or_password:client.uuid_or_password,flow:client.flow || '',limit_ip:client.limit_ip || 0,total_gb:client.total_gb || 0,expiry_time:localDateTime(client.expiry_time),enable:client.enable}); showClientModal.value=true; }
+    async function saveClient() { savingClient.value=true; const payload={email:clientForm.email,uuid_or_password:clientForm.uuid_or_password || null,flow:clientForm.flow,limit_ip:clientForm.limit_ip,total_gb:clientForm.total_gb,expiry_time:apiDate(clientForm.expiry_time),enable:clientForm.enable}; try { if(editingClient.value) await api.put(`/clients/${editingClient.value.id}`,payload); else await api.post(`/inbounds/${selectedInbound.value.id}/clients`,{...payload,inbound_id:selectedInbound.value.id}); showClientModal.value=false; await Promise.all([openClients(selectedInbound.value),loadInbounds(),loadOverview()]); showToast('کلاینت با موفقیت ذخیره شد'); } catch(error) { showToast(friendlyError(error,'ذخیره کلاینت ناموفق بود'),'error'); } finally { savingClient.value=false; } }
+    async function toggleClient(client) { try { const r=await api.post(`/clients/${client.id}/toggle`); client.enable=r.data.enable; await loadOverview(); } catch(error) { showToast(friendlyError(error),'error'); } }
+    async function removeClient(client) { if(!confirm(`کلاینت «${client.email}» حذف شود؟`)) return; try { await api.delete(`/clients/${client.id}`); await Promise.all([openClients(selectedInbound.value),loadInbounds(),loadOverview()]); showToast('کلاینت حذف شد'); } catch(error) { showToast(friendlyError(error),'error'); } }
+    async function resetTraffic(client) { if(!confirm('مصرف این کلاینت صفر شود؟')) return; try { await api.post(`/clients/${client.id}/reset-traffic`); client.up=0; client.down=0; showToast('ترافیک کلاینت ریست شد'); } catch(error) { showToast(friendlyError(error),'error'); } }
+    async function clientLink(client) { return api.get(`/clients/${client.id}/config-link`).then(r=>r.data.link); }
+    async function copyText(text) { try { await navigator.clipboard.writeText(text); showToast('در کلیپ‌بورد کپی شد'); } catch { showToast('کپی خودکار در این مرورگر ممکن نیست','error'); } }
+    async function copyClientLink(client) { try { await copyText(await clientLink(client)); } catch(error) { showToast(friendlyError(error,'دریافت لینک ناموفق بود'),'error'); } }
+    async function copySubscription(client) { await copyText(`${location.origin}/api/v1/sub/${client.sub_id}`); }
+
+    async function saveSettings() { savingSettings.value=true; try { const data=await api.put('/settings',{settings:{server_domain:settingsForm.server_domain,server_ip:settingsForm.server_ip,panel_name:settingsForm.panel_name,xray_log_level:settingsForm.xray_log_level}}).then(r=>r.data); resolvedHost.value=data.resolved_host; overview.value.server_host=resolvedHost.value; showToast('تنظیمات ذخیره شد و هاست لینک‌ها بروزرسانی شد'); } catch(error) { showToast(friendlyError(error,'ذخیره تنظیمات ناموفق بود'),'error'); } finally { savingSettings.value=false; } }
+    function openNodeModal() { Object.assign(nodeForm,{name:'',api_address:'',api_token:''}); showNodeModal.value=true; }
+    async function saveNode() { try { await api.post('/nodes',nodeForm); showNodeModal.value=false; await loadNodes(); showToast('نود ثبت شد'); } catch(error) { showToast(friendlyError(error,'ثبت نود ناموفق بود'),'error'); } }
+
+    const chartPoints = computed(() => { const values=[...(chart.value.up||[]),...(chart.value.down||[])].map(Number); const max=Math.max(...values,1); const width=800, height=205; const count=Math.max((chart.value.labels||[]).length,2); const points=(list)=>list.map((v,i)=>`${(i/(count-1))*width},${height-(Number(v)/max)*height+20}`); return {up:points(chart.value.up||[]),down:points(chart.value.down||[])}; });
+    const chartUpPath = computed(() => chartPoints.value.up.length ? `M ${chartPoints.value.up.join(' L ')}` : '');
+    const chartDownPath = computed(() => chartPoints.value.down.length ? `M ${chartPoints.value.down.join(' L ')}` : '');
+    const chartArea = computed(() => { const p=chartPoints.value.up; return p.length ? `M ${p[0]} L ${p.join(' L ')} L 800,245 L 0,245 Z` : ''; });
+
+    watch(currentView, view => { if(view==='config' && !Object.keys(config.value).length) loadConfig(); if(view==='nodes') loadNodes(); });
+    onMounted(async () => { setTheme(); if(isAuthenticated.value) { await loadAll(); } });
+    return { isAuthenticated, busy, refreshing, mobileMenu, darkMode, showPassword, loginError, loginForm, me, overview, inbounds, clients, nodes, settings, settingsForm, resolvedHost, currentView, viewTitle, globalSearch, lastRefresh, isXrayOnline, enabledInbounds, chart, chartRange, chartRanges, chartUpPath, chartDownPath, chartArea, inboundSearch, protocolFilter, filteredInbounds, networkLabel, config, configText, configInbounds, selectedInbound, toast, adminInitial, showInboundModal, editingInbound, inboundForm, savingInbound, showClientModal, editingClient, clientForm, savingClient, showNodeModal, nodeForm, savingSettings, handleLogin, logout, toggleTheme, refreshAll, loadTraffic, go, openInboundModal, editInbound, saveInbound, toggleInbound, removeInbound, openClients, openClientModal, editClient, saveClient, toggleClient, removeClient, resetTraffic, copyClientLink, copySubscription, saveSettings, openNodeModal, saveNode, formatBytes, formatDate, isExpired, loadConfig, downloadConfig };
+  }
+}).mount('#app');
+</script>
 </body>
 </html>

@@ -1,11 +1,15 @@
 venv/
+.venv/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 panel.db
+*.db
 .env
 core/config.json
+core/config.json.bak
+*.log
 .DS_Store
 dist/
 node_modules/
