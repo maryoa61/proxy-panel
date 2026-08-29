@@ -1,14 +1,21 @@
 [Unit]
-Description=Xray-core Management Panel
-After=network.target xray.service
+Description=Xray Control management panel
+Documentation=https://github.com/maryoa61/proxy-panel
+After=network-online.target xray.service
+Wants=network-online.target
 
 [Service]
 Type=simple
 User=root
 WorkingDirectory=/usr/local/panel
-ExecStart=/usr/local/panel/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+EnvironmentFile=-/etc/xray-panel/panel.env
+ExecStart=/usr/local/panel/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers
 Restart=on-failure
 RestartSec=5
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/xray-panel /etc/xray /usr/local/panel/core
 
 [Install]
 WantedBy=multi-user.target
