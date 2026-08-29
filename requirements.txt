@@ -13,5 +13,5 @@ psutil>=5.9,<8.0
 grpcio>=1.59,<2.0
 protobuf>=4.25,<7.0
 
-# FastAPI/Starlette TestClient support for the current runtime line.
-httpx2>=2.0,<3.0
+# FastAPI/Starlette TestClient support.
+httpx>=0.27,<1.0
