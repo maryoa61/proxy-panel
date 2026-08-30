@@ -1,8 +1,6 @@
 services:
   panel:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
+    image: proxy-panel:latest
     container_name: xray-panel
     restart: unless-stopped
     ports:
@@ -16,8 +14,6 @@ services:
       DATABASE_URL: sqlite:////data/panel.db
       XRAY_CONFIG_PATH: /etc/xray/config.json
       ENABLE_PUBLIC_IP_LOOKUP: ${ENABLE_PUBLIC_IP_LOOKUP:-0}
-      # Leave empty in the panel-only container. If Xray runs as a sidecar or
-      # on the host, set a command appropriate for that environment.
       XRAY_RELOAD_COMMAND: ${XRAY_RELOAD_COMMAND:-}
     volumes:
       - panel_data:/data
@@ -28,11 +24,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
-
-  # Xray itself is deliberately not forced into the default stack: an Xray
-  # process must have a valid Reality key/certificate and its network policy
-  # is deployment-specific. The generated file is available in the shared
-  # xray_config volume. A sample sidecar command is documented in README.md.
 
 volumes:
   panel_data:
