@@ -2,14 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
-    tags: [ "v*.*.*" ]
   pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   JWT_SECRET_KEY: ci-test-secret-key-not-for-production
@@ -21,52 +18,70 @@ env:
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
           cache: "pip"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install ruff
 
-      - name: Lint with ruff
-        run: ruff check app/ || true
+      - name: Python byte-compile check
+        run: |
+          python -m compileall -q -f app scripts
+          echo "Python byte-compile check passed."
 
-      - name: Byte-compile check (catch syntax errors)
-        run: python -m py_compile app/*.py scripts/*.py
+      - name: Bash syntax checks
+        run: |
+          for script in $(git ls-files '*.sh'); do
+            echo "Checking shell syntax: ${script}"
+            bash -n "${script}"
+          done
+          echo "Bash syntax checks passed."
 
       - name: Start API server
         run: |
           nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 > server.log 2>&1 &
           echo $! > server.pid
-          for i in $(seq 1 20); do
+          for _ in $(seq 1 30); do
             if curl -sf http://127.0.0.1:8000/health > /dev/null; then
-              echo "Server is up"
-              break
+              echo "API server is up"
+              exit 0
             fi
-            echo "Waiting for server... ($i)"
             sleep 1
           done
+          echo "API server did not become healthy" >&2
+          cat server.log || true
+          exit 1
 
-      - name: Run API differential tests
+      - name: Run API test suite
         env:
           PANEL_URL: http://127.0.0.1:8000
         run: |
           chmod +x scripts/test_api.sh
           ./scripts/test_api.sh
 
-      - name: Dump server logs on failure
+      - name: Upload server logs on failure
         if: failure()
-        run: cat server.log || true
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-logs-python-${{ matrix.python-version }}
+          path: |
+            server.log
+            server.pid
+          if-no-files-found: warn
 
       - name: Stop API server
         if: always()
@@ -102,63 +117,26 @@ jobs:
             -e ADMIN_PASSWORD="${ADMIN_PASSWORD}" \
             -e ENABLE_PUBLIC_IP_LOOKUP="${ENABLE_PUBLIC_IP_LOOKUP}" \
             proxy-panel:ci
-          for i in $(seq 1 20); do
+          for _ in $(seq 1 30); do
             if curl -sf http://127.0.0.1:8000/health > /dev/null; then
               echo "Container is healthy"
-              break
+              exit 0
             fi
-            echo "Waiting for container... ($i)"
             sleep 1
           done
-          curl -sf http://127.0.0.1:8000/health
+          echo "Container did not become healthy" >&2
+          docker logs panel-smoke > panel-smoke.log 2>&1 || true
+          cat panel-smoke.log || true
+          exit 1
 
-      - name: Dump container logs on failure
+      - name: Upload container logs on failure
         if: failure()
-        run: docker logs panel-smoke || true
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-logs
+          path: panel-smoke.log
+          if-no-files-found: warn
 
       - name: Stop container
         if: always()
         run: docker rm -f panel-smoke || true
-
-  release:
-    runs-on: ubuntu-latest
-    needs: [lint-and-test, docker-build]
-    # Only runs when a version tag (v1.0.0 etc.) is pushed — never on plain
-    # commits or pull requests. This mirrors how 3x-ui and similar projects
-    # publish: GitHub Actions builds and attaches an artifact to a Release;
-    # the VPS pulls it down and applies it whenever the operator chooses to.
-    if: startsWith(github.ref, 'refs/tags/v')
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build release image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/Dockerfile
-          push: false
-          load: true
-          tags: proxy-panel:${{ github.ref_name }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Export image as a downloadable archive
-        run: |
-          docker tag proxy-panel:${{ github.ref_name }} proxy-panel:latest
-          docker save proxy-panel:${{ github.ref_name }} proxy-panel:latest | gzip > proxy-panel-${{ github.ref_name }}.tar.gz
-          ls -lh proxy-panel-${{ github.ref_name }}.tar.gz
-
-      - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: proxy-panel ${{ github.ref_name }}
-          generate_release_notes: true
-          files: |
-            proxy-panel-${{ github.ref_name }}.tar.gz
-            docker/docker-compose.release.yml
-            scripts/deploy-release.sh
